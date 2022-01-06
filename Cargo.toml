@@ -1,0 +1,11 @@
+[package]
+name = "dodge-the-bevy"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy =  { git = "https://github.com/bevyengine/bevy", features = [ "dynamic" ] }
+# bevy =  { git = "https://github.com/bevyengine/bevy" }
+rand = "0.7"
