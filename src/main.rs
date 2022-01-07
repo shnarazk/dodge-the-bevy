@@ -141,7 +141,7 @@ fn track_mouse_movement(
 //
 #[allow(dead_code)]
 fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    // let music = asset_server.get_handle("dodge/art/House In a Forest Loop.ogg");
-    let music = asset_server.get_handle("sound/Windless Slopes.ogg");
+    let music = asset_server.get_handle("sounds/House In a Forest Loop.ogg");
+    // let music = asset_server.get_handle("sounds/Windless Slopes.ogg");
     audio.play(music);
 }

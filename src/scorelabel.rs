@@ -34,8 +34,7 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
                     TextSection {
                         value: "Score: ".to_string(),
                         style: TextStyle {
-                            // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                            font: asset_server.load("fonts/NotoSansJP-Regular.otf"),
+                            font: asset_server.load("fonts/Xolonium-Regular.ttf"),
                             font_size: 60.0,
                             color: Color::WHITE,
                         },
@@ -43,7 +42,7 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
                     TextSection {
                         value: "".to_string(),
                         style: TextStyle {
-                            font: asset_server.load("fonts/NotoSansJP-Regular.otf"),
+                            font: asset_server.load("fonts/Xolonium-Regular.ttf"),
                             font_size: 60.0,
                             color: Color::GOLD,
                         },

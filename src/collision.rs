@@ -30,7 +30,7 @@ pub fn check_collision(
             if player.score < 1.0 {
                 // should be game over by shifting to the next stage
             } else {
-                audio.play(asset_server.get_handle("sound/forceField_000.ogg"));
+                audio.play(asset_server.get_handle("sounds/laserpew.ogg"));
             }
         }
     }
