@@ -2,6 +2,8 @@
 
 This is a modified and extended game of [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps) for [Godot game engine](https://godotengine.org).
 
+!()[https://user-images.githubusercontent.com/997855/148520835-bafe2f81-1e69-48b7-ab7c-2ed7050e07e4.gif]
+
 ## Copying
 
 `assets/sounds/House In a Forest Loop.ogg` Copyright &copy; 2012 [HorrorPen](https://opengameart.org/users/horrorpen), [CC-BY 3.0: Attribution](http://creativecommons.org/licenses/by/3.0/). Source: https://opengameart.org/content/loop-house-in-a-forest
