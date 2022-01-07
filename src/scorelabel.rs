@@ -4,7 +4,6 @@ pub struct ScorePlugin;
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_simple);
-        // .add_system(simple_text_update);
     }
 }
 
@@ -68,6 +67,7 @@ pub fn update_score(
 ) {
     let mut player = player_query.single_mut();
     player.score += 1.0;
+    player.max_score = player.max_score.max(player.score);
     let mut score = score_query.single_mut();
     score.sections[1].value = format!("{}", player.score as u32);
 }

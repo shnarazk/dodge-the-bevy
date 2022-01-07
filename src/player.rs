@@ -9,6 +9,7 @@ use {
 #[derive(Component, Debug, Default)]
 pub struct Player {
     pub score: f32,
+    pub max_score: f32,
 }
 
 pub fn setup_player(

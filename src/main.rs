@@ -39,7 +39,7 @@ fn main() {
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
-                .with_run_criteria(FixedTimestep::step(60.0 /* 25.5 */))
+                .with_run_criteria(FixedTimestep::step(25.5))
                 .with_system(play_bgm),
         )
         .add_system_set(
@@ -72,23 +72,9 @@ struct GameResourceHandles {
     sounds: Vec<HandleUntyped>,
 }
 
-// impl FromWorld for CharacterSpriteHandles {
-//     fn from_world(world: &mut World) -> Self {
-//         let world = world.cell();
-//         let asset_server = world.get_resource::<AssetServer>().unwrap();
-//         asset_server.watch_for_changes().unwrap();
-//         let mut handles = asset_server.load_folder("dodge/art").unwrap();
-//         handles.append(&mut asset_server.load_folder("sprites").unwrap());
-//         Self { handles }
-//     }
-// }
-
 fn load_assets(mut handles: ResMut<GameResourceHandles>, asset_server: ResMut<AssetServer>) {
-    handles.sprites = asset_server.load_folder("dodge/art").unwrap();
-    handles
-        .sprites
-        .append(&mut asset_server.load_folder("sprites").unwrap());
-    handles.sounds = asset_server.load_folder("sound").unwrap();
+    handles.sprites = asset_server.load_folder("sprites").unwrap();
+    handles.sounds = asset_server.load_folder("sounds").unwrap();
 }
 
 fn check_textures(

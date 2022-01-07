@@ -32,22 +32,22 @@ pub fn setup_enemy(
         1 => (
             EnemyKind::Swim,
             [
-                asset_server.get_handle("dodge/art/enemySwimming_1.png"),
-                asset_server.get_handle("dodge/art/enemySwimming_2.png"),
+                asset_server.get_handle("sprites/enemySwimming_1.png"),
+                asset_server.get_handle("sprites/enemySwimming_2.png"),
             ],
         ),
         2 => (
             EnemyKind::Walk,
             [
-                asset_server.get_handle("dodge/art/enemyWalking_1.png"),
-                asset_server.get_handle("dodge/art/enemyWalking_2.png"),
+                asset_server.get_handle("sprites/enemyWalking_1.png"),
+                asset_server.get_handle("sprites/enemyWalking_2.png"),
             ],
         ),
         _ => (
             EnemyKind::Fly,
             [
-                asset_server.get_handle("dodge/art/enemyFlyingAlt_1.png"),
-                asset_server.get_handle("dodge/art/enemyFlyingAlt_2.png"),
+                asset_server.get_handle("sprites/enemyFlyingAlt_1.png"),
+                asset_server.get_handle("sprites/enemyFlyingAlt_2.png"),
             ],
         ),
     };
@@ -58,9 +58,9 @@ pub fn setup_enemy(
     }
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
     let vendor_handle = match kind {
-        EnemyKind::Fly => asset_server.load("dodge/art/enemyFlyingAlt_1.png"),
-        EnemyKind::Swim => asset_server.load("dodge/art/enemySwimming_1.png"),
-        EnemyKind::Walk => asset_server.load("dodge/art/enemyWalking_1.png"),
+        EnemyKind::Fly => asset_server.load("sprites/enemyFlyingAlt_1.png"),
+        EnemyKind::Swim => asset_server.load("sprites/enemySwimming_1.png"),
+        EnemyKind::Walk => asset_server.load("sprites/enemyWalking_1.png"),
     };
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());

@@ -1,5 +1,7 @@
 # Dodge the bevy, a simple game written in Rust with Bevy
 
+This is a modified and extended game of [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps) for [Godot game engine](https://godotengine.org).
+
 ## Copying
 
 `assets/sounds/House In a Forest Loop.ogg` Copyright &copy; 2012 [HorrorPen](https://opengameart.org/users/horrorpen), [CC-BY 3.0: Attribution](http://creativecommons.org/licenses/by/3.0/). Source: https://opengameart.org/content/loop-house-in-a-forest
