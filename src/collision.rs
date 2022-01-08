@@ -1,5 +1,5 @@
 use {
-    crate::{enemy::Enemy, player::Player, CollisionEvent},
+    crate::{enemy::Enemy, player::Player, CollisionEvent, GameOverEvent},
     bevy::{prelude::*, sprite::collide_aabb::collide},
 };
 
@@ -12,6 +12,7 @@ pub fn check_collision(
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
     mut collision_channel: EventWriter<CollisionEvent>,
+    mut game_over_channel: EventWriter<GameOverEvent>,
 ) {
     let (player_trans, mut player) = player_query.single_mut();
     // let player_size = player_trans.scale.truncate();
@@ -29,6 +30,7 @@ pub fn check_collision(
             player.score *= 0.5;
             if player.score < 1.0 {
                 // should be game over by shifting to the next stage
+                game_over_channel.send(GameOverEvent);
             } else {
                 audio.play(asset_server.get_handle("sounds/laserpew.ogg"));
             }

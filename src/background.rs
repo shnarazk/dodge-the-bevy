@@ -7,14 +7,17 @@ use bevy::{
     render::{
         mesh::Indices,
         render_asset::RenderAssets,
-        render_phase::{AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase, SetItemPipeline, TrackedRenderPass},
+        render_phase::{
+            AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase,
+            SetItemPipeline, TrackedRenderPass,
+        },
+        render_resource::*,
         render_resource::{
             BlendState, ColorTargetState, ColorWrites, Face, FragmentState, FrontFace,
             MultisampleState, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineCache,
             RenderPipelineDescriptor, SpecializedPipeline, SpecializedPipelines, TextureFormat,
             VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
-        render_resource::*,
         renderer::{RenderDevice, RenderQueue},
         texture::BevyDefault,
         view::VisibleEntities,
@@ -33,10 +36,10 @@ pub fn setup_background(
 ) {
     let mut rect = Mesh::new(PrimitiveTopology::TriangleList);
     let v_pos: Vec<[f32; 3]> = vec![
-                           [-1.0, -1.0, 0.0],
-                           [-1.0,  1.0, 0.0],
-                           [ 1.0,  1.0, 0.0],
-                           [ 1.0, -1.0, 0.0],
+        [-1.0, -1.0, 0.0],
+        [-1.0, 1.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [1.0, -1.0, 0.0],
     ];
     rect.set_attribute(Mesh::ATTRIBUTE_POSITION, v_pos);
     let mut v_color = vec![[0.0, 0.0, 0.0, 1.0]];
@@ -49,7 +52,7 @@ pub fn setup_background(
     rect.set_indices(Some(Indices::U32(indices)));
     commands.spawn_bundle((
         ColoredMesh2d::default(),
-         Mesh2dHandle(meshes.add(rect)),
+        Mesh2dHandle(meshes.add(rect)),
         // Transform::default(),
         Transform::default().with_scale(Vec3::splat(config.width)),
         // Transform::default().with_scale(Vec3::splat(128.)),
@@ -219,10 +222,7 @@ impl Plugin for ColoredMesh2dPlugin {
 
         // Load our custom shader
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
-        shaders.set_untracked(
-            COLORED_MESH2D_SHADER_HANDLE,
-            Shader::from_wgsl(SHADER),
-        );
+        shaders.set_untracked(COLORED_MESH2D_SHADER_HANDLE, Shader::from_wgsl(SHADER));
 
         // Register our custom draw function and pipeline, and add our render systems
         let render_app = app.get_sub_app_mut(RenderApp).unwrap();

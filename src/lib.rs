@@ -7,4 +7,7 @@ pub mod player;
 pub mod scorelabel;
 
 pub const Z_AXIS: f32 = 1.0;
+
 pub struct CollisionEvent;
+pub struct GameOverEvent;
+pub struct RestartEvent;

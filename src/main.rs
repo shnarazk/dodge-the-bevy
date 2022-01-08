@@ -8,7 +8,7 @@ use {
         enemy::{animate_enemy, setup_enemy},
         player::{animate_player, setup_player, Player},
         scorelabel::{update_score, ScorePlugin},
-        CollisionEvent,
+        CollisionEvent, GameOverEvent, RestartEvent,
     },
 };
 
@@ -16,6 +16,7 @@ use {
 enum AppState {
     Setup,
     Ready,
+    Restart,
 }
 
 fn main() {
@@ -32,6 +33,8 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_plugin(ColoredMesh2dPlugin)
         .add_event::<CollisionEvent>()
+        .add_event::<GameOverEvent>()
+        .add_event::<RestartEvent>()
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_assets))
@@ -61,6 +64,9 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(0.2))
                 .with_system(update_score),
         )
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(game_over))
+        .add_system_set(SystemSet::on_enter(AppState::Restart).with_system(show_restart_panel))
+        .add_system_set(SystemSet::on_update(AppState::Restart).with_system(check_restart))
         .add_system(exit_on_esc_system)
         .run()
 }
@@ -128,9 +134,32 @@ fn track_mouse_movement(
 //
 // BGM
 //
-#[allow(dead_code)]
 fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     let music = asset_server.get_handle("sounds/House In a Forest Loop.ogg");
-    // let music = asset_server.get_handle("sounds/Windless Slopes.ogg");
     audio.play(music);
+}
+
+fn game_over(
+    mut commands: Commands,
+    mut query: Query<Entity, With<Character>>,
+    mut game_end: EventReader<GameOverEvent>,
+    mut state: ResMut<State<AppState>>,
+) {
+    if game_end.iter().next().is_some() {
+        state.set(AppState::Restart).unwrap();
+        for ent in query.iter_mut() {
+            commands.entity(ent).despawn();
+        }
+    }
+}
+
+fn show_restart_panel() {}
+
+fn check_restart(
+    mut restart_channel: EventReader<RestartEvent>,
+    mut state: ResMut<State<AppState>>,
+) {
+    if restart_channel.iter().next().is_some() {
+        state.set(AppState::Ready).unwrap();
+    }
 }
