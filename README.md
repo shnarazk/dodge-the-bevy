@@ -2,7 +2,7 @@
 
 This is a modified and extended game of [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps) for [Godot game engine](https://godotengine.org).
 
-![](https://user-images.githubusercontent.com/997855/148520835-bafe2f81-1e69-48b7-ab7c-2ed7050e07e4.gif)
+![](https://user-images.githubusercontent.com/997855/148645225-a2403eee-200b-44c8-9787-8b4588131a98.gif)
 
 ## Copying
 
