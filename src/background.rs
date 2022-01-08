@@ -1,18 +1,21 @@
 use bevy::{
     core::FloatOrd,
     core_pipeline::Transparent2d,
+    ecs::system::{lifetimeless::SRes, SystemParamItem},
     prelude::*,
     reflect::TypeUuid,
     render::{
         mesh::Indices,
         render_asset::RenderAssets,
-        render_phase::{AddRenderCommand, DrawFunctions, RenderPhase, SetItemPipeline},
+        render_phase::{AddRenderCommand, DrawFunctions, EntityRenderCommand, RenderCommandResult, RenderPhase, SetItemPipeline, TrackedRenderPass},
         render_resource::{
             BlendState, ColorTargetState, ColorWrites, Face, FragmentState, FrontFace,
             MultisampleState, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineCache,
             RenderPipelineDescriptor, SpecializedPipeline, SpecializedPipelines, TextureFormat,
             VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
+        render_resource::*,
+        renderer::{RenderDevice, RenderQueue},
         texture::BevyDefault,
         view::VisibleEntities,
         RenderApp, RenderStage,
@@ -77,12 +80,30 @@ pub struct ColoredMesh2d;
 pub struct ColoredMesh2dPipeline {
     /// this pipeline wraps the standard [`Mesh2dPipeline`]
     mesh2d_pipeline: Mesh2dPipeline,
+    time_bind_group_layout: BindGroupLayout,
 }
 
 impl FromWorld for ColoredMesh2dPipeline {
     fn from_world(world: &mut World) -> Self {
+        let render_device = world.get_resource_mut::<RenderDevice>().unwrap();
+        let time_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("time bind group"),
+                entries: &[BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: BufferSize::new(std::mem::size_of::<f32>() as u64),
+                    },
+                    count: None,
+                }],
+            });
+
         Self {
             mesh2d_pipeline: Mesh2dPipeline::from_world(world),
+            time_bind_group_layout,
         }
     }
 }
@@ -143,6 +164,7 @@ impl SpecializedPipeline for ColoredMesh2dPipeline {
                 self.mesh2d_pipeline.view_layout.clone(),
                 // Bind group 1 is the mesh uniform
                 self.mesh2d_pipeline.mesh_layout.clone(),
+                self.time_bind_group_layout.clone(),
             ]),
             primitive: PrimitiveState {
                 front_face: FrontFace::Ccw,
@@ -172,6 +194,8 @@ type DrawColoredMesh2d = (
     SetMesh2dViewBindGroup<0>,
     // Set the mesh uniform as bind group 1
     SetMesh2dBindGroup<1>,
+    // Set the time
+    SetTimeBindGroup<2>,
     // Draw the mesh
     DrawMesh2d,
 );
@@ -185,6 +209,14 @@ pub const COLORED_MESH2D_SHADER_HANDLE: HandleUntyped =
 
 impl Plugin for ColoredMesh2dPlugin {
     fn build(&self, app: &mut App) {
+        let render_device = app.world.get_resource::<RenderDevice>().unwrap();
+        let buffer = render_device.create_buffer(&BufferDescriptor {
+            label: Some("time uniform buffer"),
+            size: std::mem::size_of::<f32>() as u64,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
         // Load our custom shader
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
         shaders.set_untracked(
@@ -196,10 +228,17 @@ impl Plugin for ColoredMesh2dPlugin {
         let render_app = app.get_sub_app_mut(RenderApp).unwrap();
         render_app
             .add_render_command::<Transparent2d, DrawColoredMesh2d>()
+            .insert_resource(TimeMeta {
+                buffer,
+                bind_group: None,
+            })
             .init_resource::<ColoredMesh2dPipeline>()
             .init_resource::<SpecializedPipelines<ColoredMesh2dPipeline>>()
+            .add_system_to_stage(RenderStage::Extract, extract_time)
             .add_system_to_stage(RenderStage::Extract, extract_colored_mesh2d)
-            .add_system_to_stage(RenderStage::Queue, queue_colored_mesh2d);
+            .add_system_to_stage(RenderStage::Prepare, prepare_time)
+            .add_system_to_stage(RenderStage::Queue, queue_colored_mesh2d)
+            .add_system_to_stage(RenderStage::Queue, queue_time_bind_group);
     }
 }
 
@@ -273,6 +312,70 @@ pub fn queue_colored_mesh2d(
     }
 }
 
+#[derive(Default)]
+struct ExtractedTime {
+    seconds_since_startup: f32,
+}
+
+// extract the passed time into a resource in the render world
+fn extract_time(mut commands: Commands, time: Res<Time>) {
+    commands.insert_resource(ExtractedTime {
+        seconds_since_startup: time.seconds_since_startup() as f32,
+    });
+}
+
+struct TimeMeta {
+    buffer: Buffer,
+    bind_group: Option<BindGroup>,
+}
+
+// write the extracted time into the corresponding uniform buffer
+fn prepare_time(
+    time: Res<ExtractedTime>,
+    time_meta: ResMut<TimeMeta>,
+    render_queue: Res<RenderQueue>,
+) {
+    render_queue.write_buffer(
+        &time_meta.buffer,
+        0,
+        bevy::core::cast_slice(&[time.seconds_since_startup]),
+    );
+}
+
+// create a bind group for the time uniform buffer
+fn queue_time_bind_group(
+    render_device: Res<RenderDevice>,
+    mut time_meta: ResMut<TimeMeta>,
+    pipeline: Res<ColoredMesh2dPipeline>,
+) {
+    let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
+        label: None,
+        layout: &pipeline.time_bind_group_layout,
+        entries: &[BindGroupEntry {
+            binding: 0,
+            resource: time_meta.buffer.as_entire_binding(),
+        }],
+    });
+    time_meta.bind_group = Some(bind_group);
+}
+
+struct SetTimeBindGroup<const I: usize>;
+impl<const I: usize> EntityRenderCommand for SetTimeBindGroup<I> {
+    type Param = SRes<TimeMeta>;
+
+    fn render<'w>(
+        _view: Entity,
+        _item: Entity,
+        time_meta: SystemParamItem<'w, '_, Self::Param>,
+        pass: &mut TrackedRenderPass<'w>,
+    ) -> RenderCommandResult {
+        let time_bind_group = time_meta.into_inner().bind_group.as_ref().unwrap();
+        pass.set_bind_group(I, time_bind_group, &[]);
+
+        RenderCommandResult::Success
+    }
+}
+
 const SHADER: &str = r"
 // Import the standard 2d mesh uniforms and set their bind groups
 #import bevy_sprite::mesh2d_view_bind_group
@@ -288,11 +391,29 @@ struct Vertex {
     [[location(1)]] color: vec4<f32>;
 };
 
-// struct Time {
-//     time_since_startup: f32;
-// };
-// [[group(2), binding(0)]]
-// var<uniform> time: Time;
+struct Time {
+    time_since_startup: f32;
+};
+[[group(2), binding(0)]]
+var<uniform> time: Time;
+
+struct VertexOutput {
+    // The vertex shader must set the on-screen position of the vertex
+    [[builtin(position)]] clip_position: vec4<f32>;
+    // We pass the vertex color to the framgent shader in location 0
+    [[location(0)]] position: vec3<f32>;
+};
+
+[[stage(vertex)]]
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
+    let world_position = mesh.model * vec4<f32>(vertex.position, 1.0);
+    // let world_position = vec4<f32>(vertex.position, 1.0);
+    let position = view.view_proj * world_position;
+    out.clip_position = position;
+    out.position = vertex.position;
+    return out;
+}
 
 fn oklab_to_linear_srgb(c: vec3<f32>) -> vec3<f32> {
     let L = c.x;
@@ -312,45 +433,29 @@ fn oklab_to_linear_srgb(c: vec3<f32>) -> vec3<f32> {
     );
 }
 
-struct VertexOutput {
-    // The vertex shader must set the on-screen position of the vertex
-    [[builtin(position)]] clip_position: vec4<f32>;
-    // We pass the vertex color to the framgent shader in location 0
-    [[location(0)]] color: vec4<f32>;
+struct FragmentInput {
+    // The color is interpolated between vertices by default
+    [[location(0)]] position: vec3<f32>;
 };
 
-[[stage(vertex)]]
-fn vertex(vertex: Vertex) -> VertexOutput {
-    var out: VertexOutput;
-    let world_position = mesh.model * vec4<f32>(vertex.position, 1.0);
-    // let world_position = vec4<f32>(vertex.position, 1.0);
-    let position = view.view_proj * world_position;
-    out.clip_position = position;
-
+[[stage(fragment)]]
+fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
     let speed = 1.57;
-    let time_since_startup_x = vertex.position.x;
-    let time_since_startup_y = vertex.position.y;
-    let t_1 = sin(time_since_startup_x * speed) * 0.5 + 0.5;
-    let t_2 = cos(time_since_startup_y * speed);
-    let pos = vec2<f32>(0.5 * vertex.position.x, 0.5 * vertex.position.y);
+    let time_since_startup = time.time_since_startup;
+    let t_1 = sin(time_since_startup * speed) * 0.5 + 0.5;
+    let t_2 = cos(time_since_startup * speed);
+
+    let pos = vec2<f32>(in.position.x, in.position.y);
     let distance_to_center = distance(pos, vec2<f32>(0.5)) * 1.4;
+
     // blending is done in a perceptual color space: https://bottosson.github.io/posts/oklab/
     let red = vec3<f32>(0.627955, 0.224863, 0.125846);
     let green = vec3<f32>(0.86644, -0.233887, 0.179498);
     let blue = vec3<f32>(0.701674, 0.274566, -0.169156);
     let white = vec3<f32>(1.0, 0.0, 0.0);
     let mixed = mix(mix(red, blue, t_1), mix(green, white, t_2), distance_to_center);
-    out.color = vec4<f32>(oklab_to_linear_srgb(mixed), 1.0);
-    return out;
-}
 
-struct FragmentInput {
-    // The color is interpolated between vertices by default
-    [[location(0)]] color: vec4<f32>;
-};
-
-[[stage(fragment)]]
-fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
-    return in.color;
+    return vec4<f32>(oklab_to_linear_srgb(mixed), 1.0);
+    // return in.color;
 }
 ";
