@@ -1,6 +1,7 @@
 use {
     bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*},
     dodge_the_bevy::{
+        background::setup_background,
         camera::{animate_camera, setup_cammera, shake_camera, MainCamera},
         character::Character,
         collision::check_collision,
@@ -34,6 +35,7 @@ fn main() {
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_assets))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
+        .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(setup_background))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
