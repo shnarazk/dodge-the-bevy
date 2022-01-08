@@ -1,7 +1,7 @@
 use {
     bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*},
     dodge_the_bevy::{
-        background::setup_background,
+        background::{setup_background, ColoredMesh2dPlugin},
         camera::{animate_camera, setup_cammera, shake_camera, MainCamera},
         character::Character,
         collision::check_collision,
@@ -30,6 +30,7 @@ fn main() {
         .init_resource::<GameResourceHandles>()
         .add_plugins(DefaultPlugins)
         .add_plugin(ScorePlugin)
+        .add_plugin(ColoredMesh2dPlugin)
         .add_event::<CollisionEvent>()
         .add_state(AppState::Setup)
         // from 'state'
