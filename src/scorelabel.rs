@@ -69,5 +69,5 @@ pub fn update_score(
     player.score += 1.0;
     player.max_score = player.max_score.max(player.score);
     let mut score = score_query.single_mut();
-    score.sections[1].value = format!("{}", player.score as u32);
+    score.sections[1].value = format!("{:0>4}", player.score as u32);
 }

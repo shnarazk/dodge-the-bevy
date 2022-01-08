@@ -58,7 +58,7 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
-                .with_run_criteria(FixedTimestep::step(1.0))
+                .with_run_criteria(FixedTimestep::step(0.2))
                 .with_system(update_score),
         )
         .add_system(exit_on_esc_system)
