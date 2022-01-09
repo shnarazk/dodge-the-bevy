@@ -1,5 +1,5 @@
 use {
-    crate::{character::Character, Z_AXIS},
+    crate::{character::Character, AppState, Z_AXIS},
     bevy::prelude::*,
     rand::prelude::random,
 };
@@ -21,12 +21,16 @@ pub struct Enemy {
 }
 
 pub fn setup_enemy(
+    state: ResMut<State<AppState>>,
     mut commands: Commands,
     config: Res<WindowDescriptor>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Image>>,
 ) {
+    if *state.current() != AppState::Game {
+        return;
+    }
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
     let (kind, sprites) = match (random::<f32>() * 3.0) as usize {
         1 => (

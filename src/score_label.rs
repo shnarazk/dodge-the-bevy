@@ -1,4 +1,7 @@
-use {crate::player::Player, bevy::prelude::*};
+use {
+    crate::{player::Player, AppState},
+    bevy::prelude::*,
+};
 pub struct ScorePlugin;
 
 impl Plugin for ScorePlugin {
@@ -11,8 +14,6 @@ impl Plugin for ScorePlugin {
 pub struct ScoreLabel;
 
 fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // UI camera
-    commands.spawn_bundle(UiCameraBundle::default());
     // Rich text with multiple sections
     commands
         .spawn_bundle(TextBundle {
@@ -62,9 +63,13 @@ pub fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<Scor
 }
 
 pub fn update_score(
+    state: ResMut<State<AppState>>,
     mut player_query: Query<&mut Player>,
     mut score_query: Query<&mut Text, With<ScoreLabel>>,
 ) {
+    if *state.current() != AppState::Game {
+        return;
+    }
     if let Some(mut player) = player_query.iter_mut().next() {
         player.score += 1.0;
         player.max_score = player.max_score.max(player.score);
