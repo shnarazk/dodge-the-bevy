@@ -19,17 +19,19 @@ pub fn shake_camera(
     mut collision_event: EventReader<CollisionEvent>,
 ) {
     if collision_event.iter().next().is_some() {
-        let camera: &mut MainCamera = &mut camera_query.single_mut();
-        if camera.shaker.is_none() {
-            camera.shaker = Some(20);
+        if let Some(mut camera) = camera_query.iter_mut().next() {
+            if camera.shaker.is_none() {
+                camera.shaker = Some(20);
+            }
         }
     }
 }
 
 pub fn animate_camera(mut query: Query<(&mut Transform, &mut MainCamera)>) {
-    let (mut trans, mut camera) = query.single_mut();
-    if let Some(n) = camera.shaker {
-        trans.rotation = Quat::from_rotation_z(n as f32 * 0.05 * std::f32::consts::PI);
-        camera.shaker = n.checked_sub(1);
+    if let Some((mut trans, mut camera)) = query.iter_mut().next() {
+        if let Some(n) = camera.shaker {
+            trans.rotation = Quat::from_rotation_z(n as f32 * 0.05 * std::f32::consts::PI);
+            camera.shaker = n.checked_sub(1);
+        }
     }
 }

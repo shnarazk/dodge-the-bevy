@@ -5,19 +5,15 @@ use {
         camera::{animate_camera, setup_cammera, shake_camera, MainCamera},
         character::Character,
         collision::check_collision,
-        enemy::{animate_enemy, setup_enemy},
+        enemy::{animate_enemy, setup_enemy, Enemy},
         player::{animate_player, setup_player, Player},
-        scorelabel::{update_score, ScorePlugin},
-        CollisionEvent, GameOverEvent, RestartEvent,
+        restart_label::{
+            game_button_system, hide_restart_panel, setup_restart_panel, show_restart_panel,
+        },
+        score_label::{update_score, ScorePlugin},
+        AppState, CollisionEvent, GameOverEvent, RestartEvent,
     },
 };
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum AppState {
-    Setup,
-    Ready,
-    Restart,
-}
 
 fn main() {
     App::new()
@@ -35,38 +31,60 @@ fn main() {
         .add_event::<CollisionEvent>()
         .add_event::<GameOverEvent>()
         .add_event::<RestartEvent>()
-        .add_state(AppState::Setup)
+        .add_state(AppState::Load)
         // from 'state'
-        .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_assets))
-        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
-        .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(setup_background))
-        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
-        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
-        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
         .add_system_set(
-            SystemSet::on_update(AppState::Ready)
+            SystemSet::on_enter(AppState::Load)
+                .with_system(load_assets)
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Load)
+                .with_system(check_assets)
+        )
+        .add_system_set(
+            SystemSet::on_enter(AppState::Setup)
+                .with_system(setup_background)
+                .with_system(setup_cammera)
+                .with_system(setup_player)
+                .with_system(setup_restart_panel)
+                .with_system(game_start)
+        )
+        .add_system_set(
+            SystemSet::on_enter(AppState::Game)
+                .with_system(hide_restart_panel)
+                .with_system(play_bgm)
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Game)
+                .with_system(shake_camera)
+                .with_system(animate_camera)
+                .with_system(animate_player)
+                .with_system(animate_enemy)
+                .with_system(check_collision)
+                .with_system(track_mouse_movement)
+                .with_system(game_over)
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Game)
                 .with_run_criteria(FixedTimestep::step(25.5))
-                .with_system(play_bgm),
+                .with_system(play_bgm)
         )
         .add_system_set(
-            SystemSet::on_update(AppState::Ready)
+            SystemSet::on_update(AppState::Game)
+                .with_system(setup_enemy)
                 .with_run_criteria(FixedTimestep::step(0.55))
-                .with_system(setup_enemy),
         )
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(shake_camera))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_camera))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(check_collision))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
         .add_system_set(
-            SystemSet::on_update(AppState::Ready)
+            SystemSet::on_update(AppState::Game)
                 .with_run_criteria(FixedTimestep::step(0.2))
-                .with_system(update_score),
+                .with_system(update_score)
         )
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(game_over))
         .add_system_set(SystemSet::on_enter(AppState::Restart).with_system(show_restart_panel))
-        .add_system_set(SystemSet::on_update(AppState::Restart).with_system(check_restart))
+        .add_system_set(
+            SystemSet::on_update(AppState::Restart)
+                .with_system(check_restart)
+                .with_system(game_button_system)
+        )
         .add_system(exit_on_esc_system)
         .run()
 }
@@ -86,7 +104,7 @@ fn load_assets(mut handles: ResMut<GameResourceHandles>, asset_server: ResMut<As
     handles.sounds = asset_server.load_folder("sounds").unwrap();
 }
 
-fn check_textures(
+fn check_assets(
     mut state: ResMut<State<AppState>>,
     sprite_handles: ResMut<GameResourceHandles>,
     asset_server: Res<AssetServer>,
@@ -94,7 +112,7 @@ fn check_textures(
     if let LoadState::Loaded =
         asset_server.get_group_load_state(sprite_handles.sprites.iter().map(|handle| handle.id))
     {
-        state.set(AppState::Ready).unwrap();
+        state.set(AppState::Setup).unwrap();
     }
 }
 
@@ -111,22 +129,23 @@ fn track_mouse_movement(
     if let Some(position) = window.cursor_position() {
         let size = Vec2::new(window.width() as f32, window.height() as f32);
         let p = position - size / 2.0;
-        let camera_transform = queries.q0().single();
-        let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
-        let mut q1 = queries.q1();
-        let mut player = q1.single_mut();
-        let dx = clicked.x - player.trans_x;
-        let dy = clicked.y - player.trans_y;
-        let dist2 = dx.powi(2) + dy.powi(2);
-        if 100.0 < dist2 {
-            let dist = dist2.sqrt();
-            player.flip = dx < 0.0;
-            player.diff_x = 10.0 * dx / dist;
-            player.diff_y = 10.0 * dy / dist;
-        } else {
-            player.flip = false;
-            player.diff_x = 0.0;
-            player.diff_y = 0.0;
+        if let Some(camera_transform) = queries.q0().iter().next() {
+            let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
+            let mut q1 = queries.q1();
+            let mut player = q1.single_mut();
+            let dx = clicked.x - player.trans_x;
+            let dy = clicked.y - player.trans_y;
+            let dist2 = dx.powi(2) + dy.powi(2);
+            if 100.0 < dist2 {
+                let dist = dist2.sqrt();
+                player.flip = dx < 0.0;
+                player.diff_x = 10.0 * dx / dist;
+                player.diff_y = 10.0 * dy / dist;
+            } else {
+                player.flip = false;
+                player.diff_x = 0.0;
+                player.diff_y = 0.0;
+            }
         }
     }
 }
@@ -139,27 +158,31 @@ fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(music);
 }
 
+fn game_start(
+    mut state: ResMut<State<AppState>>,
+) {
+    state.set(AppState::Game).unwrap();
+}
+
 fn game_over(
     mut commands: Commands,
-    mut query: Query<Entity, With<Character>>,
+    mut enemies: Query<Entity, With<Enemy>>,
     mut game_end: EventReader<GameOverEvent>,
     mut state: ResMut<State<AppState>>,
 ) {
     if game_end.iter().next().is_some() {
         state.set(AppState::Restart).unwrap();
-        for ent in query.iter_mut() {
+        for ent in enemies.iter_mut() {
             commands.entity(ent).despawn();
         }
     }
 }
-
-fn show_restart_panel() {}
 
 fn check_restart(
     mut restart_channel: EventReader<RestartEvent>,
     mut state: ResMut<State<AppState>>,
 ) {
     if restart_channel.iter().next().is_some() {
-        state.set(AppState::Ready).unwrap();
+        state.set(AppState::Game).unwrap();
     }
 }

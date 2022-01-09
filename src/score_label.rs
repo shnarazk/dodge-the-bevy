@@ -65,9 +65,10 @@ pub fn update_score(
     mut player_query: Query<&mut Player>,
     mut score_query: Query<&mut Text, With<ScoreLabel>>,
 ) {
-    let mut player = player_query.single_mut();
-    player.score += 1.0;
-    player.max_score = player.max_score.max(player.score);
-    let mut score = score_query.single_mut();
-    score.sections[1].value = format!("{:0>4}", player.score as u32);
+    if let Some(mut player) = player_query.iter_mut().next() {
+        player.score += 1.0;
+        player.max_score = player.max_score.max(player.score);
+        let mut score = score_query.single_mut();
+        score.sections[1].value = format!("{:0>4}", player.score as u32);
+    }
 }
