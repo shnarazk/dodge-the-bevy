@@ -33,26 +33,20 @@ fn main() {
         .add_event::<RestartEvent>()
         .add_state(AppState::Load)
         // from 'state'
-        .add_system_set(
-            SystemSet::on_enter(AppState::Load)
-                .with_system(load_assets)
-        )
-        .add_system_set(
-            SystemSet::on_update(AppState::Load)
-                .with_system(check_assets)
-        )
+        .add_system_set(SystemSet::on_enter(AppState::Load).with_system(load_assets))
+        .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
         .add_system_set(
             SystemSet::on_enter(AppState::Setup)
                 .with_system(setup_background)
                 .with_system(setup_cammera)
                 .with_system(setup_player)
                 .with_system(setup_restart_panel)
-                .with_system(game_start)
+                .with_system(game_start),
         )
         .add_system_set(
             SystemSet::on_enter(AppState::Game)
                 .with_system(hide_restart_panel)
-                .with_system(play_bgm)
+                .with_system(play_bgm),
         )
         .add_system_set(
             SystemSet::on_update(AppState::Game)
@@ -62,28 +56,28 @@ fn main() {
                 .with_system(animate_enemy)
                 .with_system(check_collision)
                 .with_system(track_mouse_movement)
-                .with_system(game_over)
+                .with_system(game_over),
         )
         .add_system_set(
             SystemSet::on_update(AppState::Game)
                 .with_run_criteria(FixedTimestep::step(25.5))
-                .with_system(play_bgm)
+                .with_system(play_bgm),
         )
         .add_system_set(
             SystemSet::on_update(AppState::Game)
                 .with_system(setup_enemy)
-                .with_run_criteria(FixedTimestep::step(0.55))
+                .with_run_criteria(FixedTimestep::step(0.55)),
         )
         .add_system_set(
             SystemSet::on_update(AppState::Game)
                 .with_run_criteria(FixedTimestep::step(0.2))
-                .with_system(update_score)
+                .with_system(update_score),
         )
         .add_system_set(SystemSet::on_enter(AppState::Restart).with_system(show_restart_panel))
         .add_system_set(
             SystemSet::on_update(AppState::Restart)
                 .with_system(check_restart)
-                .with_system(game_button_system)
+                .with_system(game_button_system),
         )
         .add_system(exit_on_esc_system)
         .run()
@@ -158,9 +152,7 @@ fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     audio.play(music);
 }
 
-fn game_start(
-    mut state: ResMut<State<AppState>>,
-) {
+fn game_start(mut state: ResMut<State<AppState>>) {
     state.set(AppState::Game).unwrap();
 }
 
