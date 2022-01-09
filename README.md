@@ -12,7 +12,9 @@ cargo run --release
 
 ### Play
 
-Just move pointer. It follows. No extra action by clicking, dragging nor Pressing.
+Dodge them just by moving pointer. It follows. No extra action by clicking, dragging nor pressing.
+
+Note: the creeps accelerate in non-linearly.
 
 ## Copying
 
