@@ -16,6 +16,11 @@ Dodge them just by moving pointer. It follows. No extra action by clicking, drag
 
 Note: the creeps accelerate in non-linearly.
 
+### Technical note
+
+The background is a [examples/2d/mesh2d.rs](https://github.com/bevyengine/bevy/blob/v0.6.0/examples/2d/mesh2d.rs).
+Its animation is based on [examples/shader/animated_shader.rs](https://github.com/bevyengine/bevy/blob/v0.6.0/examples/shader/animate_shader.rs). The shader is copied from [Rhythm game in Rust using Bevy](https://caballerocoll.com/blog/bevy-rhythm-game/).
+
 ## Copying
 
 `assets/sounds/House In a Forest Loop.ogg` Copyright &copy; 2012 [HorrorPen](https://opengameart.org/users/horrorpen), [CC-BY 3.0: Attribution](http://creativecommons.org/licenses/by/3.0/). Source: https://opengameart.org/content/loop-house-in-a-forest
@@ -32,6 +37,5 @@ Note: the creeps accelerate in non-linearly.
 - [Bevy repository](https://github.com/bevyengine/bevy)
 - [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps)
 - [Godot game engine](https://godotengine.org/)
-- [Juice it or lose it - a talk by Martin Jonasson & Petri Purho](https://www.youtube.com/watch?v=Fy0aCDmgnxg)
 - [Rhythm game in Rust using Bevy](https://caballerocoll.com/blog/bevy-rhythm-game/)
 - [Rust](https://www.rust-lang.org/)
