@@ -4,6 +4,16 @@ This is a modified and extended game of [Dodge the Creeps](https://github.com/go
 
 ![](https://user-images.githubusercontent.com/997855/148645225-a2403eee-200b-44c8-9787-8b4588131a98.gif)
 
+### Run
+
+```
+cargo run --release
+```
+
+### Play
+
+Just move pointer. It follows. No extra action by clicking, dragging nor Pressing.
+
 ## Copying
 
 `assets/sounds/House In a Forest Loop.ogg` Copyright &copy; 2012 [HorrorPen](https://opengameart.org/users/horrorpen), [CC-BY 3.0: Attribution](http://creativecommons.org/licenses/by/3.0/). Source: https://opengameart.org/content/loop-house-in-a-forest
