@@ -1,4 +1,4 @@
-# Dodge the bevy, a simple game written in Rust with Bevy
+# Dodge the bevy, a simple game written in Rust with Bevy-0.6
 
 This is a modified and extended game of [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps) for [Godot game engine](https://godotengine.org).
 
