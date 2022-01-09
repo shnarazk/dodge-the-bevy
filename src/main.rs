@@ -7,8 +7,8 @@ use {
         collision::check_collision,
         enemy::{animate_enemy, setup_enemy, Enemy},
         player::{animate_player, setup_player, Player},
-        restart_label::{
-            game_button_system, hide_restart_panel, setup_restart_panel, show_restart_panel,
+        restart_panel::{
+            restart_panel_system, hide_restart_panel, setup_restart_panel, show_restart_panel,
         },
         score_label::{update_score, ScorePlugin},
         AppState, CollisionEvent, GameOverEvent, RestartEvent,
@@ -77,7 +77,7 @@ fn main() {
         .add_system_set(
             SystemSet::on_update(AppState::Restart)
                 .with_system(check_restart)
-                .with_system(game_button_system),
+                .with_system(restart_panel_system),
         )
         .add_system(exit_on_esc_system)
         .run()

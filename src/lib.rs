@@ -4,7 +4,7 @@ pub mod character;
 pub mod collision;
 pub mod enemy;
 pub mod player;
-pub mod restart_label;
+pub mod restart_panel;
 pub mod score_label;
 
 pub const Z_AXIS: f32 = 1.0;

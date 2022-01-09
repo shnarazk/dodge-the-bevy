@@ -6,9 +6,9 @@ use {
     bevy::{app::AppExit, prelude::*},
 };
 
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+const NORMAL_BUTTON: Color = Color::rgb(0.05, 0.05, 0.05);
+const HOVERED_BUTTON: Color = Color::rgb(0.05, 0.25, 0.95);
+const PRESSED_BUTTON: Color = Color::rgb(1.00, 0.25, 0.25);
 
 #[derive(Component, Debug, Default)]
 pub struct GameButtonsPlugin;
@@ -24,7 +24,7 @@ pub struct HighScoreLabel;
 impl Plugin for GameButtonsPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_restart_panel)
-            .add_system(game_button_system);
+            .add_system(restart_panel_system);
     }
 }
 
@@ -66,7 +66,7 @@ pub fn hide_restart_panel(
 }
 
 #[allow(clippy::type_complexity)]
-pub fn game_button_system(
+pub fn restart_panel_system(
     mut commands: Commands,
     mut app_exit_events: EventWriter<AppExit>,
     mut restart_events: EventWriter<RestartEvent>,
@@ -140,7 +140,7 @@ pub fn setup_restart_panel(
             style: Style {
                 display: Display::None,
                 // position_type: PositionType::Absolute,
-                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                size: Size::new(Val::Px(250.0), Val::Px(80.0)),
                 // center button
                 margin: Rect::all(Val::Auto),
                 // horizontally center child text
@@ -159,7 +159,7 @@ pub fn setup_restart_panel(
                     TextStyle {
                         font: font.clone(),
                         font_size,
-                        color: Color::rgb(0.9, 0.9, 0.9),
+                        color: Color::rgb(0.6, 0.9, 0.8),
                     },
                     Default::default(),
                 ),
@@ -172,7 +172,7 @@ pub fn setup_restart_panel(
             style: Style {
                 display: Display::None,
                 // position_type: PositionType::Absolute,
-                size: Size::new(Val::Px(250.0), Val::Px(65.0)),
+                size: Size::new(Val::Px(250.0), Val::Px(80.0)),
                 margin: Rect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -188,7 +188,7 @@ pub fn setup_restart_panel(
                     TextStyle {
                         font,
                         font_size,
-                        color: Color::rgb(0.9, 0.9, 0.9),
+                        color: Color::rgb(1.0, 0.5, 0.5),
                     },
                     Default::default(),
                 ),
