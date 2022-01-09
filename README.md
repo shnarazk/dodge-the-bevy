@@ -26,10 +26,12 @@ Note: the creeps accelerate in non-linearly.
 
 `assets/fonts/Xolonium-Regular.ttf` is "Xolonium". Copyright &copy; 2011-2016 Severin Meyer <sev.ch@web.de>, with Reserved Font Name Xolonium, SIL open font license version 1.1. Details are in `fonts/LICENSE.txt`.
 
-# References
+## References
 
 - [Bevy](https://bevyengine.org/)
 - [Bevy repository](https://github.com/bevyengine/bevy)
 - [Dodge the Creeps](https://github.com/godotengine/godot-demo-projects/tree/master/2d/dodge_the_creeps)
-- [Godot game engine](https://godotengine.org).
+- [Godot game engine](https://godotengine.org/)
+- [Juice it or lose it - a talk by Martin Jonasson & Petri Purho](https://www.youtube.com/watch?v=Fy0aCDmgnxg)
 - [Rhythm game in Rust using Bevy](https://caballerocoll.com/blog/bevy-rhythm-game/)
+- [Rust](https://www.rust-lang.org/)
