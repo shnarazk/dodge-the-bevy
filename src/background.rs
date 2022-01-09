@@ -3,7 +3,6 @@ use bevy::{
     core_pipeline::Transparent2d,
     ecs::system::{lifetimeless::SRes, SystemParamItem},
     prelude::*,
-    reflect::TypeUuid,
     render::{
         mesh::Indices,
         render_asset::RenderAssets,
@@ -62,25 +61,13 @@ pub fn setup_background(
     ));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-/// This example shows how to manually render 2d items using "mid level render apis" with a custom pipeline for 2d meshes
-/// It doesn't use the [`Material2d`] abstraction, but changes the vertex buffer to include vertex color
-/// Check out the "mesh2d" example for simpler / higher level 2d meshes
-// fn main() {
-//     App::new()
-//         .add_plugins(DefaultPlugins)
-//         .add_plugin(ColoredMesh2dPlugin)
-//         .add_startup_system(star)
-//         .run();
-// }
-
 /// A marker component for colored 2d meshes
 #[derive(Component, Default)]
 pub struct ColoredMesh2d;
 
 /// Custom pipeline for 2d meshes with vertex colors
 pub struct ColoredMesh2dPipeline {
+    shader: Handle<Shader>,
     /// this pipeline wraps the standard [`Mesh2dPipeline`]
     mesh2d_pipeline: Mesh2dPipeline,
     time_bind_group_layout: BindGroupLayout,
@@ -88,6 +75,10 @@ pub struct ColoredMesh2dPipeline {
 
 impl FromWorld for ColoredMesh2dPipeline {
     fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let asset_server = world.get_resource::<AssetServer>().unwrap();
+        let shader = asset_server.load("shaders/background.wgsl");
+
         let render_device = world.get_resource_mut::<RenderDevice>().unwrap();
         let time_bind_group_layout =
             render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
@@ -103,9 +94,11 @@ impl FromWorld for ColoredMesh2dPipeline {
                     count: None,
                 }],
             });
+        let mesh2d_pipeline = world.get_resource::<Mesh2dPipeline>().unwrap().clone();
 
         Self {
-            mesh2d_pipeline: Mesh2dPipeline::from_world(world),
+            shader,
+            mesh2d_pipeline,
             time_bind_group_layout,
         }
     }
@@ -119,7 +112,6 @@ impl SpecializedPipeline for ColoredMesh2dPipeline {
         // Customize how to store the meshes' vertex attributes in the vertex buffer
         // Our meshes only have position and color
         let vertex_attributes = vec![
-            // Position (GOTCHA! Vertex_Position isn't first in the buffer due to how Mesh sorts attributes (alphabetically))
             VertexAttribute {
                 format: VertexFormat::Float32x3,
                 // this offset is the size of the color attribute, which is stored first
@@ -140,7 +132,7 @@ impl SpecializedPipeline for ColoredMesh2dPipeline {
         RenderPipelineDescriptor {
             vertex: VertexState {
                 // Use our custom shader
-                shader: COLORED_MESH2D_SHADER_HANDLE.typed::<Shader>(),
+                shader: self.shader.clone(),
                 entry_point: "vertex".into(),
                 shader_defs: Vec::new(),
                 // Use our custom vertex buffer
@@ -152,7 +144,7 @@ impl SpecializedPipeline for ColoredMesh2dPipeline {
             },
             fragment: Some(FragmentState {
                 // Use our custom shader
-                shader: COLORED_MESH2D_SHADER_HANDLE.typed::<Shader>(),
+                shader: self.shader.clone(),
                 shader_defs: Vec::new(),
                 entry_point: "fragment".into(),
                 targets: vec![ColorTargetState {
@@ -206,10 +198,6 @@ type DrawColoredMesh2d = (
 /// Plugin that renders [`ColoredMesh2d`]s
 pub struct ColoredMesh2dPlugin;
 
-/// Handle to the custom shader with a unique random ID
-pub const COLORED_MESH2D_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13828845428412094821);
-
 impl Plugin for ColoredMesh2dPlugin {
     fn build(&self, app: &mut App) {
         let render_device = app.world.get_resource::<RenderDevice>().unwrap();
@@ -219,10 +207,6 @@ impl Plugin for ColoredMesh2dPlugin {
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-
-        // Load our custom shader
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
-        shaders.set_untracked(COLORED_MESH2D_SHADER_HANDLE, Shader::from_wgsl(SHADER));
 
         // Register our custom draw function and pipeline, and add our render systems
         let render_app = app.get_sub_app_mut(RenderApp).unwrap();
@@ -375,87 +359,3 @@ impl<const I: usize> EntityRenderCommand for SetTimeBindGroup<I> {
         RenderCommandResult::Success
     }
 }
-
-const SHADER: &str = r"
-// Import the standard 2d mesh uniforms and set their bind groups
-#import bevy_sprite::mesh2d_view_bind_group
-[[group(0), binding(0)]]
-var<uniform> view: View;
-#import bevy_sprite::mesh2d_struct
-[[group(1), binding(0)]]
-var<uniform> mesh: Mesh2d;
-
-// The structure of the vertex buffer is as specified in `specialize()`
-struct Vertex {
-    [[location(0)]] position: vec3<f32>;
-    [[location(1)]] color: vec4<f32>;
-};
-
-struct Time {
-    time_since_startup: f32;
-};
-[[group(2), binding(0)]]
-var<uniform> time: Time;
-
-struct VertexOutput {
-    // The vertex shader must set the on-screen position of the vertex
-    [[builtin(position)]] clip_position: vec4<f32>;
-    // We pass the vertex color to the framgent shader in location 0
-    [[location(0)]] position: vec3<f32>;
-};
-
-[[stage(vertex)]]
-fn vertex(vertex: Vertex) -> VertexOutput {
-    var out: VertexOutput;
-    let world_position = mesh.model * vec4<f32>(vertex.position, 1.0);
-    // let world_position = vec4<f32>(vertex.position, 1.0);
-    let position = view.view_proj * world_position;
-    out.clip_position = position;
-    out.position = vertex.position;
-    return out;
-}
-
-fn oklab_to_linear_srgb(c: vec3<f32>) -> vec3<f32> {
-    let L = c.x;
-    let a = c.y;
-    let b = c.z;
-
-    let l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-    let m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-    let s_ = L - 0.0894841775 * a - 1.2914855480 * b;
-    let l = l_*l_*l_;
-    let m = m_*m_*m_;
-    let s = s_*s_*s_;
-    return vec3<f32>(
-		 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-		-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
-    );
-}
-
-struct FragmentInput {
-    // The color is interpolated between vertices by default
-    [[location(0)]] position: vec3<f32>;
-};
-
-[[stage(fragment)]]
-fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
-    let speed = 1.57;
-    let time_since_startup = time.time_since_startup;
-    let t_1 = sin(time_since_startup * speed) * 0.5 + 0.5;
-    let t_2 = cos(time_since_startup * speed);
-
-    let pos = vec2<f32>(in.position.x, in.position.y);
-    let distance_to_center = distance(pos, vec2<f32>(0.5)) * 1.4;
-
-    // blending is done in a perceptual color space: https://bottosson.github.io/posts/oklab/
-    let red = vec3<f32>(0.627955, 0.224863, 0.125846);
-    let green = vec3<f32>(0.86644, -0.233887, 0.179498);
-    let blue = vec3<f32>(0.701674, 0.274566, -0.169156);
-    let white = vec3<f32>(1.0, 0.0, 0.0);
-    let mixed = mix(mix(red, blue, t_1), mix(green, white, t_2), distance_to_center);
-
-    return vec4<f32>(oklab_to_linear_srgb(mixed), 1.0);
-    // return in.color;
-}
-";
