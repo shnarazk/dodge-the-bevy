@@ -50,7 +50,7 @@ fn check_assets(
 }
 ```
 
-# Player
+## Player definition
 
 ```rust
 // player.rs
@@ -119,7 +119,7 @@ fn main() {
 }
 ```
 
-# Player animation
+## Player animation
 
 ```rust
 // player.rs
@@ -184,7 +184,7 @@ fn main() {
 }
 ```
 
-# Moving the player
+## Moving the player
 
 ```rust
 // player.rs
