@@ -95,13 +95,102 @@ pub fn setup_player(
             texture_atlas: atlas_handle,
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.15, true))
         .insert(Player::from(texture_atlas))
+        ;
 }
 
+```
+
+```rust
+// main.rs
+
+fn main() {
+    App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Dodge!".to_string(),
+            width: 1200.0,
+            height: 800.0,
+            ..Default::default()
+        })
+        .add_system_set(SystemSet::on_enter(AppState::Load).with_system(load_assets))
+        .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
+        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup_player))
+        run();
+}
+```
+
+# Player animation
+
+```rust
+// player.rs
+
+pub fn setup_player(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut textures: ResMut<Assets<Image>>,
+) {
+    ...
+        .insert(Timer::from_seconds(0.15, true))
+        ;
+}
+
+pub fn animate_player(
+    config: Res<WindowDescriptor>,
+    time: Res<Time>,
+    mut query: Query<
+        (
+            &mut Character,
+            &mut Timer,
+            &mut Transform,
+            &mut TextureAtlasSprite,
+        ),
+        With<Player>,
+    >,
+) {
+    for (mut player, mut timer, mut trans, mut sprite) in query.iter_mut() {
+        trans.translation.x =
+            (trans.translation.x + player.diff_x).clamp(-0.45 * config.width, 0.45 * config.width);
+        trans.translation.y = (trans.translation.y + player.diff_y)
+            .clamp(-0.45 * config.height, 0.45 * config.height);
+        player.trans_x = trans.translation.x;
+        player.trans_y = trans.translation.y;
+        timer.tick(time.delta());
+        if timer.finished() {
+            sprite.index = (sprite.index + 1) % player.texture_atlas.textures.len();
+            sprite.flip_x = player.flip;
+        }
+    }
+}
+```
+
+```rust
+// main.rs
+fn main() {
+    App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Dodge!".to_string(),
+            width: 1200.0,
+            height: 800.0,
+            ..Default::default()
+        })
+        .add_system_set(SystemSet::on_enter(AppState::Load).with_system(load_assets))
+        .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
+        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup_player))
+        .add_system_set(SystemSet::on_update(AppState::Game).with_system(check_mouse_movement))
+        .add_system_set(SystemSet::on_update(AppState::Game).with_system(animate_player))
+        .run()
+        ;
+}
+```
+
+# Moving the player
+
+```rust
+// player.rs
 // from Unofficial Bevy Cheat Book 'Convert cursor to world coodinates'
 #[allow(clippy::type_complexity)]
-pub fn track_mouse_movement(
+fn track_mouse_movement(
     windows: ResMut<Windows>,
     mut queries: QuerySet<(
         QueryState<&Transform, With<MainCamera>>,
@@ -136,7 +225,6 @@ pub fn track_mouse_movement(
 
 ```rust
 // main.rs
-
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
@@ -145,10 +233,22 @@ fn main() {
             height: 800.0,
             ..Default::default()
         })
+        .init_resource::<GameResourceHandles>()
+        .add_plugins(DefaultPlugins)
+        .add_state(AppState::Load)
         .add_system_set(SystemSet::on_enter(AppState::Load).with_system(load_assets))
         .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
-        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup_player))
-        .add_system_set(SystemSet::on_update(AppState::Game).with_system(check_mouse_movement))
-        run();
+        .add_system_set(
+            SystemSet::on_enter(AppState::Setup)
+                .with_system(setup_cammera)
+                .with_system(setup_player)
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Game)
+                .with_system(animate_player)
+                .with_system(track_mouse_movement)
+        )
+        .add_system(exit_on_esc_system)
+        .run()
 }
 ```
