@@ -19,18 +19,18 @@ pub fn setup_player(
     mut textures: ResMut<Assets<Image>>,
 ) {
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    for handle in [
+    let sprite_handles = [
         asset_server.get_handle("sprites/bevy_logo_dark_1.png"),
         asset_server.get_handle("sprites/bevy_logo_dark_2.png"),
         asset_server.get_handle("sprites/bevy_logo_dark_3.png"),
-    ] {
-        if let Some(image) = textures.get(&handle) {
+    ];
+    for handle in sprite_handles.iter() {
+        if let Some(image) = textures.get(handle) {
             texture_atlas_builder.add_texture(handle.clone_weak(), image);
         }
     }
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
-    let vendor_handle = asset_server.load("sprites/bevy_logo_dark_1.png");
-    let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
+    let vendor_index = texture_atlas.get_texture_index(&sprite_handles[0]).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
     commands

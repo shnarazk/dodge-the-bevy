@@ -8,7 +8,7 @@ pub struct MainCamera {
     pub shaker: Option<u32>,
 }
 
-pub fn setup_cammera(mut commands: Commands) {
+pub fn setup_camera(mut commands: Commands) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera::default());

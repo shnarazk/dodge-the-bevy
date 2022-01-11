@@ -1,8 +1,25 @@
 # Organizing the project
 
+1. Create a crata with `cargo new`.
+
 ```
 cargo new
 ```
+
+2. Add bevy into `[dependency]`
+
+3. Set up source tree.
+
+```
+assets/
+src/
+ - lib.rs
+ - main.rs
+```
+
+4. Define global data.
+
+- `AppState`
 
 ```rust
 // lib.rs
@@ -15,6 +32,8 @@ pub enum AppState {
     Restart,
 }
 ```
+
+5. Load assets at the first stage.
 
 ```rust
 // main.rs
@@ -52,6 +71,8 @@ fn check_assets(
 
 ## Player definition
 
+Now let's define `Player`, the main sprite. Since it's movable. We need a storage to hold its direction, speed and its textures. 
+
 ```rust
 // player.rs
 
@@ -63,6 +84,24 @@ pub struct Player;
     pub diff_y: f32,
 }
 
+impl Character {
+    pub fn from(texture_atlas: TextureAtlas) -> Self {
+        Self {
+            texture_atlas,
+            flip: false,
+            diff_x: 0.0,
+            diff_y: 0.0,
+        }
+    }
+}
+
+```
+
+This storage can be attached to the `bevy::prelude::SpriteBundle` with `bevey_ecs::system::EntityCommands::insert`.
+
+```rust
+// player.rs
+
 pub fn setup_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -70,18 +109,18 @@ pub fn setup_player(
     mut textures: ResMut<Assets<Image>>,
 ) {
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    for handle in [
+    let sprite_handles = [
         asset_server.get_handle("sprites/bevy_logo_dark_1.png"),
         asset_server.get_handle("sprites/bevy_logo_dark_2.png"),
         asset_server.get_handle("sprites/bevy_logo_dark_3.png"),
-    ] {
-        if let Some(image) = textures.get(&handle) {
+    ];
+    for handle in sprite_handles.iter() {
+        if let Some(image) = textures.get(handle) {
             texture_atlas_builder.add_texture(handle.clone_weak(), image);
         }
     }
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
-    let vendor_handle = asset_server.load("sprites/bevy_logo_dark_1.png");
-    let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
+    let vendor_index = texture_atlas.get_texture_index(&sprite_handles[0]).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
     commands
@@ -96,10 +135,12 @@ pub fn setup_player(
             ..Default::default()
         })
         .insert(Player::from(texture_atlas))
-        ;
+    ;
 }
-
 ```
+
+This `setup_player` is a system to be attached to the `App` with `bevy::app::App::add_system`.
+Since, however, we use `AppState`, we should use `add_system_set` instead of it.
 
 ```rust
 // main.rs
@@ -119,7 +160,42 @@ fn main() {
 }
 ```
 
+### Show it up
+
+We need a camera to see the player.
+
+```rust
+// camera.rs
+
+#[derive(Component, Debug, Default)]
+pub struct MainCamera {
+    pub shaker: Option<u32>,
+}
+
+pub fn setup_cammera(mut commands: Commands) {
+    commands
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(MainCamera::default());
+    commands.spawn_bundle(UiCameraBundle::default());
+}
+``
+
+```rust
+// main.rs
+
+        // Add the following to the chain.
+        .add_system_set(
+            SystemSet::on_enter(AppState::Setup)
+                .with_system(setup_camera)
+        )
+```
+
 ## Player animation
+
+The `Player` holds all sprites used in character animation now.
+So we make a system that change displaying sprite periodically.
+It uses a `Timer` attached to the player.
+
 
 ```rust
 // player.rs
@@ -149,12 +225,9 @@ pub fn animate_player(
     >,
 ) {
     for (mut player, mut timer, mut trans, mut sprite) in query.iter_mut() {
-        trans.translation.x =
-            (trans.translation.x + player.diff_x).clamp(-0.45 * config.width, 0.45 * config.width);
-        trans.translation.y = (trans.translation.y + player.diff_y)
-            .clamp(-0.45 * config.height, 0.45 * config.height);
-        player.trans_x = trans.translation.x;
-        player.trans_y = trans.translation.y;
+        trans.translation.x += player.diff_x);
+        trans.translation.y += player.diff_y;
+
         timer.tick(time.delta());
         if timer.finished() {
             sprite.index = (sprite.index + 1) % player.texture_atlas.textures.len();
@@ -163,6 +236,8 @@ pub fn animate_player(
     }
 }
 ```
+
+Add this system to the App.
 
 ```rust
 // main.rs
@@ -177,7 +252,6 @@ fn main() {
         .add_system_set(SystemSet::on_enter(AppState::Load).with_system(load_assets))
         .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup_player))
-        .add_system_set(SystemSet::on_update(AppState::Game).with_system(check_mouse_movement))
         .add_system_set(SystemSet::on_update(AppState::Game).with_system(animate_player))
         .run()
         ;
@@ -185,6 +259,12 @@ fn main() {
 ```
 
 ## Moving the player
+
+Then make this player controllable with mouse position.
+
+- The game window tracks the mouse position (bevy::window::Window::cursor_position).
+- We need to map cursor position to the coordinates for sprites.
+- We use a constant speed to move to any direction by normalizing 'delta'.
 
 ```rust
 // player.rs
@@ -240,7 +320,6 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Load).with_system(check_assets))
         .add_system_set(
             SystemSet::on_enter(AppState::Setup)
-                .with_system(setup_cammera)
                 .with_system(setup_player)
         )
         .add_system_set(
@@ -250,5 +329,6 @@ fn main() {
         )
         .add_system(exit_on_esc_system)
         .run()
+        ;
 }
 ```

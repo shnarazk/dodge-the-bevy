@@ -2,13 +2,13 @@ use {
     bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*},
     dodge_the_bevy::{
         background::{setup_background, ColoredMesh2dPlugin},
-        camera::{animate_camera, setup_cammera, shake_camera, MainCamera},
+        camera::{animate_camera, setup_camera, shake_camera, MainCamera},
         character::Character,
         collision::check_collision,
         enemy::{animate_enemy, setup_enemy, Enemy},
         player::{animate_player, setup_player, Player},
         restart_panel::{
-            restart_panel_system, hide_restart_panel, setup_restart_panel, show_restart_panel,
+            hide_restart_panel, restart_panel_system, setup_restart_panel, show_restart_panel,
         },
         score_label::{update_score, ScorePlugin},
         AppState, CollisionEvent, GameOverEvent, RestartEvent,
@@ -38,7 +38,7 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(AppState::Setup)
                 .with_system(setup_background)
-                .with_system(setup_cammera)
+                .with_system(setup_camera)
                 .with_system(setup_player)
                 .with_system(setup_restart_panel)
                 .with_system(game_start),
