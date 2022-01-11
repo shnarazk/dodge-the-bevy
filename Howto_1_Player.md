@@ -26,10 +26,10 @@ src/
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AppState {
-    Load,
-    Setup,
-    Game,
-    Restart,
+    Load,    // to load all textures, bgm, shaders
+    Setup,   // to configure background, cameras, ssign loaded textures ot srites
+    Game,    // to run game
+    Restart, // to display RESTART and EXIT buttons and high score
 }
 ```
 
