@@ -12,4 +12,4 @@ categories = ["games"]
 
 [dependencies]
 bevy =  { git = "https://github.com/bevyengine/bevy" }
-rand = "0.7"
+rand = "0.8"
