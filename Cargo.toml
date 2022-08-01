@@ -11,5 +11,5 @@ keywords = ["game", "bevy"]
 categories = ["games"]
 
 [dependencies]
-bevy = "0.7"
+bevy = "0.8"
 rand = "0.8"
