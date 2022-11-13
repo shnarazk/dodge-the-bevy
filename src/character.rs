@@ -1,5 +1,9 @@
 use bevy::prelude::*;
 
+// Newtype to use a `Timer` for this screen as a resource
+#[derive(Component, Deref, DerefMut, Resource)]
+pub struct SpawnTimer(pub Timer);
+
 //
 // Character, autonomous moving objects
 //
@@ -37,7 +41,7 @@ pub fn animate_character(
     time: Res<Time>,
     mut query: Query<(
         &mut Character,
-        &mut Timer,
+        &mut SpawnTimer,
         &mut Transform,
         &mut TextureAtlasSprite,
     )>,

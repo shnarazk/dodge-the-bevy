@@ -1,6 +1,5 @@
 use bevy::{
-    core::FloatOrd,
-    core_pipeline::Transparent2d,
+    core_pipeline::core_2d::Transparent2d,
     ecs::system::{lifetimeless::SRes, SystemParamItem},
     prelude::*,
     render::{
@@ -20,12 +19,13 @@ use bevy::{
         DrawMesh2d, Mesh2dHandle, Mesh2dPipeline, Mesh2dPipelineKey, Mesh2dUniform,
         SetMesh2dBindGroup, SetMesh2dViewBindGroup,
     },
+    utils::FloatOrd,
 };
 
 pub fn setup_background(
     mut commands: Commands,
+    windows: Res<Windows>,
     mut meshes: ResMut<Assets<Mesh>>,
-    config: Res<WindowDescriptor>,
 ) {
     let mut rect = Mesh::new(PrimitiveTopology::TriangleList);
     let v_pos: Vec<[f32; 3]> = vec![
@@ -47,7 +47,7 @@ pub fn setup_background(
         ColoredMesh2d::default(),
         Mesh2dHandle(meshes.add(rect)),
         // Transform::default(),
-        Transform::default().with_scale(Vec3::splat(config.width)),
+        Transform::default().with_scale(Vec3::splat(windows.width())),
         // Transform::default().with_scale(Vec3::splat(128.)),
         GlobalTransform::default(),
         Visibility::default(),
@@ -60,6 +60,7 @@ pub fn setup_background(
 pub struct ColoredMesh2d;
 
 /// Custom pipeline for 2d meshes with vertex colors
+#[derive(Resource)]
 pub struct ColoredMesh2dPipeline {
     shader: Handle<Shader>,
     /// this pipeline wraps the standard [`Mesh2dPipeline`]
@@ -99,7 +100,7 @@ impl FromWorld for ColoredMesh2dPipeline {
 }
 
 // We implement `SpecializedPipeline` to customize the default rendering from `Mesh2dPipeline`
-impl SpecializedPipeline for ColoredMesh2dPipeline {
+impl SpecializedRenderPipeline for ColoredMesh2dPipeline {
     type Key = Mesh2dPipelineKey;
 
     fn specialize(&self, key: Self::Key) -> RenderPipelineDescriptor {
@@ -141,11 +142,11 @@ impl SpecializedPipeline for ColoredMesh2dPipeline {
                 shader: self.shader.clone(),
                 shader_defs: Vec::new(),
                 entry_point: "fragment".into(),
-                targets: vec![ColorTargetState {
+                targets: vec![Some(ColorTargetState {
                     format: TextureFormat::bevy_default(),
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
-                }],
+                })],
             }),
             // Use the two standard uniforms for 2d meshes
             layout: Some(vec![
@@ -211,7 +212,7 @@ impl Plugin for ColoredMesh2dPlugin {
                 bind_group: None,
             })
             .init_resource::<ColoredMesh2dPipeline>()
-            .init_resource::<SpecializedPipelines<ColoredMesh2dPipeline>>()
+            .init_resource::<SpecializedRenderPipelines<ColoredMesh2dPipeline>>()
             .add_system_to_stage(RenderStage::Extract, extract_time)
             .add_system_to_stage(RenderStage::Extract, extract_colored_mesh2d)
             .add_system_to_stage(RenderStage::Prepare, prepare_time)
@@ -242,8 +243,8 @@ pub fn extract_colored_mesh2d(
 pub fn queue_colored_mesh2d(
     transparent_draw_functions: Res<DrawFunctions<Transparent2d>>,
     colored_mesh2d_pipeline: Res<ColoredMesh2dPipeline>,
-    mut pipelines: ResMut<SpecializedPipelines<ColoredMesh2dPipeline>>,
-    mut pipeline_cache: ResMut<RenderPipelineCache>,
+    mut pipelines: ResMut<SpecializedRenderPipelines<ColoredMesh2dPipeline>>,
+    mut pipeline_cache: ResMut<PipelineCache>,
     msaa: Res<Msaa>,
     render_meshes: Res<RenderAssets<Mesh>>,
     colored_mesh2d: Query<(&Mesh2dHandle, &Mesh2dUniform), With<ColoredMesh2d>>,
@@ -290,7 +291,7 @@ pub fn queue_colored_mesh2d(
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct ExtractedTime {
     seconds_since_startup: f32,
 }
@@ -302,6 +303,7 @@ fn extract_time(mut commands: Commands, time: Res<Time>) {
     });
 }
 
+#[derive(Resource)]
 struct TimeMeta {
     buffer: Buffer,
     bind_group: Option<BindGroup>,

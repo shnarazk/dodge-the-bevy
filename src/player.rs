@@ -52,23 +52,25 @@ pub fn setup_player(
 // (from 'sprite_sheet')
 #[allow(clippy::type_complexity)]
 pub fn animate_player(
-    config: Res<WindowDescriptor>,
+    windows: Res<Windows>,
     time: Res<Time>,
     mut query: Query<
         (
             &mut Character,
-            &mut Timer,
+            &mut SpawnTimer,
             &mut Transform,
             &mut TextureAtlasSprite,
         ),
         With<Player>,
     >,
 ) {
+    let win_width = windows.width();
+    let win_height = windows.height();
     for (mut player, mut timer, mut trans, mut sprite) in query.iter_mut() {
         trans.translation.x =
-            (trans.translation.x + player.diff_x).clamp(-0.45 * config.width, 0.45 * config.width);
-        trans.translation.y = (trans.translation.y + player.diff_y)
-            .clamp(-0.45 * config.height, 0.45 * config.height);
+            (trans.translation.x + player.diff_x).clamp(-0.45 * win_width, 0.45 * win_width);
+        trans.translation.y =
+            (trans.translation.y + player.diff_y).clamp(-0.45 * win_height, 0.45 * win_height);
         player.trans_x = trans.translation.x;
         player.trans_y = trans.translation.y;
         timer.tick(time.delta());

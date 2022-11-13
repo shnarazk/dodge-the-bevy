@@ -1,5 +1,8 @@
 use {
-    crate::{character::Character, AppState, Z_AXIS},
+    crate::{
+        character::{Character, SpawnTimer},
+        AppState, Z_AXIS,
+    },
     bevy::prelude::*,
     rand::prelude::random,
 };
@@ -22,8 +25,8 @@ pub struct Enemy {
 
 pub fn setup_enemy(
     state: ResMut<State<AppState>>,
+    windows: Res<Windows>,
     mut commands: Commands,
-    config: Res<WindowDescriptor>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Image>>,
@@ -31,6 +34,7 @@ pub fn setup_enemy(
     if *state.current() != AppState::Game {
         return;
     }
+    let window = windows.get_primary().unwrap();
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
     let (kind, sprites) = match (random::<f32>() * 3.0) as usize {
         1 => (
@@ -69,28 +73,28 @@ pub fn setup_enemy(
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
-    let mut px = 0.5 * random::<f32>() * config.width;
-    let mut py = 0.5 * random::<f32>() * config.height;
+    let mut px = 0.5 * random::<f32>() * window.width();
+    let mut py = 0.5 * random::<f32>() * window.height();
     let mut dx;
     let mut dy;
     match (random::<f32>() * 4.0) as usize {
         1 => {
-            px = config.width * 0.5 - 40.0;
+            px = window.width() * 0.5 - 40.0;
             dx = -1.0;
             dy = random::<f32>() - 0.5;
         }
         2 => {
-            px = -(config.width * 0.5 - 40.0);
+            px = -(window.width() * 0.5 - 40.0);
             dx = 1.0;
             dy = random::<f32>() - 0.5;
         }
         3 => {
-            py = config.height * 0.5 - 40.0;
+            py = window.height() * 0.5 - 40.0;
             dx = random::<f32>() - 0.5;
             dy = -1.0;
         }
         _ => {
-            py = -(config.height * 0.5 - 40.0);
+            py = -(window.height() * 0.5 - 40.0);
             dx = random::<f32>() - 0.5;
             dy = 1.0;
         }
@@ -101,7 +105,7 @@ pub fn setup_enemy(
     dx *= SPEED / dist;
     dy *= SPEED / dist;
     commands
-        .spawn_bundle(SpriteSheetBundle {
+        .spawn(SpriteSheetBundle {
             transform: Transform {
                 translation: Vec3::new(px, py, Z_AXIS),
                 scale: Vec3::splat(0.5),
@@ -111,7 +115,7 @@ pub fn setup_enemy(
             texture_atlas: atlas_handle,
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.15, true))
+        .insert(SpawnTimer(Timer::from_seconds(0.15, TimerMode::Once)))
         .insert(Character::from(texture_atlas).with_direction(dx, dy))
         .insert(Enemy {
             kind,
@@ -123,17 +127,18 @@ pub fn setup_enemy(
 #[allow(clippy::type_complexity)]
 pub fn animate_enemy(
     // mut commands: Commands,
-    config: Res<WindowDescriptor>,
+    windows: Res<Windows>,
     time: Res<Time>,
     mut query: Query<(
         // Entity,
         &mut Character,
-        &mut Timer,
+        &mut SpawnTimer,
         &mut Transform,
         &mut TextureAtlasSprite,
         &mut Enemy,
     )>,
 ) {
+    let window = windows.get_primary().unwrap();
     for (mut enemy, mut timer, mut trans, mut sprite, mut et) in query.iter_mut() {
         trans.translation.x += enemy.diff_x;
         trans.translation.y += enemy.diff_y;
@@ -142,31 +147,32 @@ pub fn animate_enemy(
         enemy.trans_y = trans.translation.y;
         enemy.diff_x *= 1.01;
         enemy.diff_y *= 1.01;
-        if 0.5 * config.width < enemy.trans_x.abs() && 0.5 * config.height < enemy.trans_y.abs() {
+        if 0.5 * window.width() < enemy.trans_x.abs() && 0.5 * window.height() < enemy.trans_y.abs()
+        {
             // commands.entity(ent).despawn();
 
-            let mut px = 0.5 * random::<f32>() * config.width;
-            let mut py = 0.5 * random::<f32>() * config.height;
+            let mut px = 0.5 * random::<f32>() * window.width();
+            let mut py = 0.5 * random::<f32>() * window.height();
             let mut dx;
             let mut dy;
             match (random::<f32>() * 4.0) as usize {
                 1 => {
-                    px = config.width * 0.5 - 40.0;
+                    px = window.width() * 0.5 - 40.0;
                     dx = -1.0;
                     dy = random::<f32>() - 0.5;
                 }
                 2 => {
-                    px = -(config.width * 0.5 - 40.0);
+                    px = -(window.width() * 0.5 - 40.0);
                     dx = 1.0;
                     dy = random::<f32>() - 0.5;
                 }
                 3 => {
-                    py = config.height * 0.5 - 40.0;
+                    py = window.height() * 0.5 - 40.0;
                     dx = random::<f32>() - 0.5;
                     dy = -1.0;
                 }
                 _ => {
-                    py = -(config.height * 0.5 - 40.0);
+                    py = -(window.height() * 0.5 - 40.0);
                     dx = random::<f32>() - 0.5;
                     dy = 1.0;
                 }

@@ -32,9 +32,9 @@ impl Plugin for GameButtonsPlugin {
 pub fn show_restart_panel(
     mut commands: Commands,
     mut player: Query<&mut Player>,
-    mut query: QuerySet<(
-        QueryState<&mut Style, With<GameButton>>,
-        QueryState<(&mut Style, &mut Text), With<HighScoreLabel>>,
+    mut query: ParamSet<(
+        Query<&mut Style, With<GameButton>>,
+        Query<(&mut Style, &mut Text), With<HighScoreLabel>>,
     )>,
 ) {
     for mut style in query.q0().iter_mut() {
@@ -52,9 +52,9 @@ pub fn show_restart_panel(
 #[allow(clippy::type_complexity)]
 pub fn hide_restart_panel(
     mut commands: Commands,
-    mut query: QuerySet<(
-        QueryState<&mut Style, With<GameButton>>,
-        QueryState<&mut Style, With<HighScoreLabel>>,
+    mut query: ParamSet<(
+        Query<&mut Style, With<GameButton>>,
+        Query<&mut Style, With<HighScoreLabel>>,
     )>,
 ) {
     for mut style in query.q0().iter_mut() {
@@ -73,7 +73,7 @@ pub fn restart_panel_system(
     mut interaction_query: Query<
         (
             &Interaction,
-            &mut UiColor,
+            &mut BackgroundColor,
             &Children,
             &GameButton,
             &mut Visibility,
@@ -112,7 +112,7 @@ pub fn setup_restart_panel(
         .spawn_bundle(TextBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: Rect {
+                position: UiRect {
                     left: Val::Percent(30.0),
                     top: Val::Percent(20.0),
                     ..Default::default()
@@ -149,7 +149,7 @@ pub fn setup_restart_panel(
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
-            color: NORMAL_BUTTON.into(),
+            background_color: NORMAL_BUTTON.into(),
             ..Default::default()
         })
         .with_children(|parent| {
@@ -178,7 +178,7 @@ pub fn setup_restart_panel(
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
-            color: NORMAL_BUTTON.into(),
+            background_color: NORMAL_BUTTON.into(),
             ..Default::default()
         })
         .with_children(|parent| {
