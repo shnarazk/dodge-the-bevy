@@ -27,6 +27,7 @@ pub fn setup_background(
     windows: Res<Windows>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    let window = windows.get_primary().unwrap();
     let mut rect = Mesh::new(PrimitiveTopology::TriangleList);
     let v_pos: Vec<[f32; 3]> = vec![
         [-1.0, -1.0, 0.0],
@@ -34,20 +35,20 @@ pub fn setup_background(
         [1.0, 1.0, 0.0],
         [1.0, -1.0, 0.0],
     ];
-    rect.set_attribute(Mesh::ATTRIBUTE_POSITION, v_pos);
+    rect.insert_attribute(Mesh::ATTRIBUTE_POSITION, v_pos);
     let mut v_color = vec![[0.0, 0.0, 0.0, 1.0]];
     v_color.extend_from_slice(&[[1.0, 1.0, 0.0, 1.0]; 3]);
-    rect.set_attribute(Mesh::ATTRIBUTE_COLOR, v_color);
+    rect.insert_attribute(Mesh::ATTRIBUTE_COLOR, v_color);
     let mut indices = vec![0, 1, 4];
     for i in 2..=4 {
         indices.extend_from_slice(&[0, i, i - 1]);
     }
     rect.set_indices(Some(Indices::U32(indices)));
-    commands.spawn_bundle((
+    commands.spawn((
         ColoredMesh2d::default(),
         Mesh2dHandle(meshes.add(rect)),
         // Transform::default(),
-        Transform::default().with_scale(Vec3::splat(windows.width())),
+        Transform::default().with_scale(Vec3::splat(window.width())),
         // Transform::default().with_scale(Vec3::splat(128.)),
         GlobalTransform::default(),
         Visibility::default(),
@@ -229,7 +230,7 @@ pub fn extract_colored_mesh2d(
 ) {
     let mut values = Vec::with_capacity(*previous_len);
     for (entity, computed_visibility) in query.iter() {
-        if !computed_visibility.is_visible {
+        if !computed_visibility.is_visible() {
             continue;
         }
         values.push((entity, (ColoredMesh2d,)));
@@ -299,7 +300,7 @@ struct ExtractedTime {
 // extract the passed time into a resource in the render world
 fn extract_time(mut commands: Commands, time: Res<Time>) {
     commands.insert_resource(ExtractedTime {
-        seconds_since_startup: time.seconds_since_startup() as f32,
+        seconds_since_startup: time.elapsed_seconds(),
     });
 }
 

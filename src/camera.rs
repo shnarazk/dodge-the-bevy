@@ -10,9 +10,8 @@ pub struct MainCamera {
 
 pub fn setup_camera(mut commands: Commands) {
     commands
-        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .spawn(Camera2dBundle::default())
         .insert(MainCamera::default());
-    commands.spawn_bundle(UiCameraBundle::default());
 }
 
 pub fn shake_camera(
