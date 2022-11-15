@@ -1,5 +1,8 @@
 use {
-    crate::{character::Character, Z_AXIS},
+    crate::{
+        character::{Character, SpawnTimer},
+        Z_AXIS,
+    },
     bevy::prelude::*,
 };
 
@@ -34,7 +37,7 @@ pub fn setup_player(
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
     commands
-        .spawn_bundle(SpriteSheetBundle {
+        .spawn(SpriteSheetBundle {
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, Z_AXIS),
                 scale: Vec3::splat(0.5),
@@ -44,7 +47,7 @@ pub fn setup_player(
             texture_atlas: atlas_handle,
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.15, true))
+        .insert(SpawnTimer(Timer::from_seconds(0.15, TimerMode::Repeating)))
         .insert(Character::from(texture_atlas))
         .insert(Player::default());
 }
@@ -64,8 +67,9 @@ pub fn animate_player(
         With<Player>,
     >,
 ) {
-    let win_width = windows.width();
-    let win_height = windows.height();
+    let window = windows.get_primary().unwrap();
+    let win_width = window.width();
+    let win_height = window.height();
     for (mut player, mut timer, mut trans, mut sprite) in query.iter_mut() {
         trans.translation.x =
             (trans.translation.x + player.diff_x).clamp(-0.45 * win_width, 0.45 * win_width);

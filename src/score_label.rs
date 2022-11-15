@@ -16,11 +16,11 @@ pub struct ScoreLabel;
 fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Rich text with multiple sections
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
-                position: Rect {
+                position: UiRect {
                     top: Val::Px(5.0),
                     left: Val::Px(15.0),
                     ..Default::default()
@@ -56,7 +56,7 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 pub fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<ScoreLabel>>) {
-    let seconds = time.seconds_since_startup() as f32;
+    let seconds = time.raw_elapsed_seconds();
     for mut text in query.iter_mut() {
         text.sections[1].value = format!("{}", seconds as u32);
     }

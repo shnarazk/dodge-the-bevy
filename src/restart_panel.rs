@@ -37,10 +37,10 @@ pub fn show_restart_panel(
         Query<(&mut Style, &mut Text), With<HighScoreLabel>>,
     )>,
 ) {
-    for mut style in query.q0().iter_mut() {
+    for mut style in query.p0().iter_mut() {
         style.display = Display::Flex;
     }
-    for (mut style, mut text) in query.q1().iter_mut() {
+    for (mut style, mut text) in query.p1().iter_mut() {
         style.display = Display::Flex;
         text.sections[0].value = format!(
             "Your high score is {:0>4.0}",
@@ -57,10 +57,10 @@ pub fn hide_restart_panel(
         Query<&mut Style, With<HighScoreLabel>>,
     )>,
 ) {
-    for mut style in query.q0().iter_mut() {
+    for mut style in query.p0().iter_mut() {
         style.display = Display::None;
     }
-    for mut style in query.q1().iter_mut() {
+    for mut style in query.p1().iter_mut() {
         style.display = Display::None;
     }
 }
@@ -109,7 +109,7 @@ pub fn setup_restart_panel(
     let font = asset_server.load("fonts/Xolonium-Regular.ttf");
     let font_size = 40.0;
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: UiRect {
@@ -117,10 +117,10 @@ pub fn setup_restart_panel(
                     top: Val::Percent(20.0),
                     ..Default::default()
                 },
-                margin: Rect::all(Val::Auto),
+                margin: UiRect::all(Val::Auto),
                 ..Default::default()
             },
-            text: Text::with_section(
+            text: Text::from_section(
                 format!(
                     "Your high score is {:0>4}",
                     player.iter().next().map_or(0.0, |p| p.max_score)
@@ -130,19 +130,18 @@ pub fn setup_restart_panel(
                     font_size,
                     color: Color::rgb(1.0, 0.3, 0.3),
                 },
-                Default::default(),
             ),
             ..Default::default()
         })
         .insert(HighScoreLabel);
     commands
-        .spawn_bundle(ButtonBundle {
+        .spawn(ButtonBundle {
             style: Style {
                 display: Display::None,
                 // position_type: PositionType::Absolute,
                 size: Size::new(Val::Px(250.0), Val::Px(80.0)),
                 // center button
-                margin: Rect::all(Val::Auto),
+                margin: UiRect::all(Val::Auto),
                 // horizontally center child text
                 justify_content: JustifyContent::Center,
                 // vertically center child text
@@ -153,27 +152,26 @@ pub fn setup_restart_panel(
             ..Default::default()
         })
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
-                text: Text::with_section(
+            parent.spawn(TextBundle {
+                text: Text::from_section(
                     "Restart",
                     TextStyle {
                         font: font.clone(),
                         font_size,
                         color: Color::rgb(0.6, 0.9, 0.8),
                     },
-                    Default::default(),
                 ),
                 ..Default::default()
             });
         })
         .insert(GameButton { exit: false });
     commands
-        .spawn_bundle(ButtonBundle {
+        .spawn(ButtonBundle {
             style: Style {
                 display: Display::None,
                 // position_type: PositionType::Absolute,
                 size: Size::new(Val::Px(250.0), Val::Px(80.0)),
-                margin: Rect::all(Val::Auto),
+                margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..Default::default()
@@ -182,15 +180,14 @@ pub fn setup_restart_panel(
             ..Default::default()
         })
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
-                text: Text::with_section(
+            parent.spawn(TextBundle {
+                text: Text::from_section(
                     "Exit",
                     TextStyle {
                         font,
                         font_size,
                         color: Color::rgb(1.0, 0.5, 0.5),
                     },
-                    Default::default(),
                 ),
                 ..Default::default()
             });
