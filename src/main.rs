@@ -1,5 +1,5 @@
 use {
-    bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*},
+    bevy::{asset::LoadState, prelude::*, time::FixedTimestep},
     dodge_the_bevy::{
         background::{setup_background, ColoredMesh2dPlugin},
         camera::{animate_camera, setup_camera, shake_camera, MainCamera},
@@ -17,12 +17,15 @@ use {
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            title: "Dodge!".to_string(),
-            width: 1200.0,
-            height: 800.0,
-            ..Default::default()
-        })
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "Dodge!".to_string(),
+                width: 1200.0,
+                height: 800.0,
+                ..Default::default()
+            },
+            ..default()
+        }))
         .insert_resource(ClearColor(Color::rgb(0.6, 0.8, 1.0)))
         .init_resource::<GameResourceHandles>()
         .add_plugins(DefaultPlugins)
@@ -79,7 +82,6 @@ fn main() {
                 .with_system(check_restart)
                 .with_system(restart_panel_system),
         )
-        .add_system(exit_on_esc_system)
         .run()
 }
 
@@ -87,7 +89,7 @@ fn main() {
 // Configuration
 //
 // (from texture_atlas)
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct GameResourceHandles {
     sprites: Vec<HandleUntyped>,
     sounds: Vec<HandleUntyped>,
@@ -114,18 +116,18 @@ fn check_assets(
 #[allow(clippy::type_complexity)]
 fn track_mouse_movement(
     windows: ResMut<Windows>,
-    mut queries: QuerySet<(
-        QueryState<&Transform, With<MainCamera>>,
-        QueryState<&mut Character, With<Player>>,
+    mut queries: ParamSet<(
+        Query<&Transform, With<MainCamera>>,
+        Query<&mut Character, With<Player>>,
     )>,
 ) {
     let window = windows.get_primary().unwrap();
     if let Some(position) = window.cursor_position() {
         let size = Vec2::new(window.width() as f32, window.height() as f32);
         let p = position - size / 2.0;
-        if let Some(camera_transform) = queries.q0().iter().next() {
+        if let Some(camera_transform) = queries.p0().iter().next() {
             let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
-            let mut q1 = queries.q1();
+            let mut q1 = queries.p1();
             let mut player = q1.single_mut();
             let dx = clicked.x - player.trans_x;
             let dy = clicked.y - player.trans_y;
