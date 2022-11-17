@@ -28,7 +28,6 @@ fn main() {
         }))
         .insert_resource(ClearColor(Color::rgb(0.6, 0.8, 1.0)))
         .init_resource::<GameResourceHandles>()
-        .add_plugins(DefaultPlugins)
         .add_plugin(ScorePlugin)
         .add_plugin(ColoredMesh2dPlugin)
         .add_event::<CollisionEvent>()
